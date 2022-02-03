@@ -1,0 +1,140 @@
+substr(X.CUSTOMER,3,length(X.CUSTOMER)-2)
+
+substring(
+  X.CUSTOMER,
+  3,
+  (len(X.CUSTOMER) - 2)
+)
+
+
+CASE 
+        WHEN CACSTC = 40 
+            THEN TO_NUMBER(SUBSTR(CREDIT.CRARTS||LPAD(CREDIT.CRMRTS,2,'0')||LPAD(CREDIT.CRDRTS,2,'0'),1,30)) 
+        ELSE
+            CASE 
+                WHEN (TO_DATE(DSAVCP||LPAD(DSMVCP,2,'0')||LPAD(DSDVCP,2,'0'),'YYYYMMDD') - TO_DATE(CREDIT.CRARTS||LPAD(CREDIT.CRMRTS,2,'0')||LPAD(CREDIT.CRDRTS,2,'0'),'YYYYMMDD')) >= 90
+                    THEN 20210518
+                ELSE
+                    TO_NUMBER(TO_CHAR((TO_DATE(CREDIT.CRARTS||LPAD(CREDIT.CRMRTS,2,'0')||LPAD(CREDIT.CRDRTS,2,'0'),'YYYYMMDD')+90),'YYYYMMDD'))
+                END
+    END AS INITIAL_RESET_DATE
+
+
+
+
+
+
+
+
+
+
+
+
+CASE 
+        WHEN CACSTC = 40 
+            THEN cast(substring(
+  ((cast(CREDIT.CRARTS as varchar(max)) + (replicate(
+    '0',
+    (2 - len(CREDIT.CRMRTS))
+  ) + cast(CREDIT.CRMRTS as varchar(max)))) + (replicate(
+    '0',
+    (2 - len(CREDIT.CRDRTS))
+  ) + cast(CREDIT.CRDRTS as varchar(max)))),
+  1,
+  30
+) as numeric)
+        ELSE
+            CASE 
+                WHEN case
+  when datediff(day, convert(
+    date,
+    ((cast(CREDIT.CRARTS as varchar(max)) + (replicate(
+      '0',
+      (2 - len(CREDIT.CRMRTS))
+    ) + cast(CREDIT.CRMRTS as varchar(max)))) + (replicate(
+      '0',
+      (2 - len(CREDIT.CRDRTS))
+    ) + cast(CREDIT.CRDRTS as varchar(max)))),
+    112
+  ), convert(
+    date,
+    ((cast(DSAVCP as varchar(max)) + (replicate(
+      '0',
+      (2 - len(DSMVCP))
+    ) + cast(DSMVCP as varchar(max)))) + (replicate(
+      '0',
+      (2 - len(DSDVCP))
+    ) + cast(DSDVCP as varchar(max)))),
+    112
+  )) >= 90 then 1
+  when not (datediff(day, convert(
+    date,
+    ((cast(CREDIT.CRARTS as varchar(max)) + (replicate(
+      '0',
+      (2 - len(CREDIT.CRMRTS))
+    ) + cast(CREDIT.CRMRTS as varchar(max)))) + (replicate(
+      '0',
+      (2 - len(CREDIT.CRDRTS))
+    ) + cast(CREDIT.CRDRTS as varchar(max)))),
+    112
+  ), convert(
+    date,
+    ((cast(DSAVCP as varchar(max)) + (replicate(
+      '0',
+      (2 - len(DSMVCP))
+    ) + cast(DSMVCP as varchar(max)))) + (replicate(
+      '0',
+      (2 - len(DSDVCP))
+    ) + cast(DSDVCP as varchar(max)))),
+    112
+  )) >= 90) then 0
+end
+                    THEN 20210518
+                ELSE
+                    cast(cast(dateadd(day, 90, convert(
+  date,
+  ((cast(CREDIT.CRARTS as varchar(max)) + (replicate(
+    '0',
+    (2 - len(CREDIT.CRMRTS))
+  ) + cast(CREDIT.CRMRTS as varchar(max)))) + (replicate(
+    '0',
+    (2 - len(CREDIT.CRDRTS))
+  ) + cast(CREDIT.CRDRTS as varchar(max)))),
+  112
+)) as varchar(max)) as numeric)
+                END
+    END AS INITIAL_RESET_DATE
+
+
+
+
+
+TO_NUMBER(SUBSTRING(ISNULL(CREDIT.CRARTS, '')+ISNULL(LPAD(CREDIT.CRMRTS,2,'0'), '')+ISNULL(LPAD(CREDIT.CRDRTS,2,'0'), ''),1,30)) 
+
+
+(CONVERT(FLOAT, CONVERT(ISNULL(DATETIME, DSAVCP, '')+ISNULL(LPAD(DSMVCP,2,'0'), '')+ISNULL(LPAD(DSDVCP,2,'0'), ''),'YYYYMMDD')) - CONVERT(FLOAT, CONVERT(ISNULL(DATETIME, CREDIT.CRARTS, '')+ISNULL(LPAD(CREDIT.CRMRTS,2,'0'), '')+ISNULL(LPAD(CREDIT.CRDRTS,2,'0'), ''),'YYYYMMDD'))) >= 90
+
+
+
+TO_NUMBER(CONVERT(VARCHAR(8), (CONVERT(ISNULL(DATETIME, CREDIT.CRARTS, '')+ISNULL(LPAD(CREDIT.CRMRTS,2,'0'), '')+ISNULL(LPAD(CREDIT.CRDRTS,2,'0'), ''),'YYYYMMDD')+90),112))
+
+
+
+SELECT CREDIT.CANUCR, DISCAP2.CANUCR, 
+CASE CACSTC
+WHEN 40 
+THEN FORMAT(DATEFROMPARTS(CREDIT.CRARTS,CREDIT.CRMRTS,CREDIT.CRDRTS),'yyyyMMdd')
+ELSE
+CASE 
+WHEN DATEDIFF(DAY,DATEFROMPARTS(CREDIT.CRARTS,CREDIT.CRMRTS,CREDIT.CRDRTS),DATEFROMPARTS (DSAVCP,DSMVCP,DSDVCP)) >= 90
+THEN '20210518'
+ELSE
+FORMAT(DATEADD(DAY,90,DATEFROMPARTS(CREDIT.CRARTS,CREDIT.CRMRTS,CREDIT.CRDRTS)),'yyyyMMdd')
+END
+END AS INITIAL_RESET_DATE
+FROM CADISCAP DISCAP2
+LEFT JOIN CACREDIT CREDIT
+ON RTRIM(LTRIM(DISCAP2.CANUCR)) = RTRIM(LTRIM(CREDIT.CANUCR)) 
+WHERE CREDIT.CANUCR = '3337528'
+
+
